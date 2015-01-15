@@ -195,6 +195,7 @@ class UserController extends BaseController {
             if(!empty($token)){
 
                 try{
+
                     // Find the user using the user id
                     $oUser = User::where('email', '=', $result['email'])->orWhere('username', '=', $result['login'])->first();
                     if($oUser != null)
@@ -210,6 +211,10 @@ class UserController extends BaseController {
                 }
                 catch (Cartalyst\Sentry\Users\UserNotFoundException $e)
                 {
+                    if(!isset($result['email']) || strlen($result['email']) <= 0)
+                    {
+                        return Redirect::to('/register')->with('error', true)->with('message', 'We could not find a email address for your GitHub account.<br>Please register manually!');
+                    }
                     // Register the user
                     $user = Sentry::register(array(
                         'email'       => $result['email'],
@@ -242,6 +247,10 @@ class UserController extends BaseController {
     {
         try
         {
+            if(is_null(Input::get('email', NULL)) || is_null(Input::get('username', NULL)) ) {
+                throw new Cartalyst\Sentry\Users\LoginRequiredException;
+            }
+
             // Let's register a user.
             $user = Sentry::register([
                  'email'        => Input::get('email'),
@@ -266,7 +275,7 @@ class UserController extends BaseController {
         }
         catch (Cartalyst\Sentry\Users\LoginRequiredException $e)
         {
-            return Redirect::to('/login')->with('error', true)->with('message', 'The login field is required.');
+            return Redirect::to('/login')->with('error', true)->with('message', 'The username and the email fields are required.');
         }
         catch (Cartalyst\Sentry\Users\PasswordRequiredException $e)
         {
